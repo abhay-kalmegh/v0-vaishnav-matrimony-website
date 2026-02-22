@@ -105,10 +105,10 @@ export default function ProfileEditPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <Label className="text-foreground">Height</Label>
-                <Select defaultValue="5'10\"">
+                <Select defaultValue={'5\'10"'}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["5'6\"", "5'7\"", "5'8\"", "5'9\"", "5'10\"", "5'11\"", "6'0\""].map((h) => (
+                    {['5\'6"', '5\'7"', '5\'8"', '5\'9"', '5\'10"', '5\'11"', '6\'0"'].map((h) => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
                   </SelectContent>

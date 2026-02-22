@@ -33,7 +33,7 @@ const events = [
 
 export function EventsSection() {
   return (
-    <section className="bg-background py-20 lg:py-28">
+    <section id="events" className="bg-background py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-6">
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center">
