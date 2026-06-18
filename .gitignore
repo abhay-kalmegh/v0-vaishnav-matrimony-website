@@ -1,0 +1,44 @@
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Common ignores
+node_modules/
+.next/
+.env*.local
+.DS_Store
+.venv
+# Python / Django
+
+.venv/
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+
+# Django
+
+backend/staticfiles/
+backend/media/
+
+# Next.js
+
+.next/
+node_modules/
+out/
+
+# Logs
+
+*.log
+
+# macOS
+
+.DS_Store
+
+# IDE
+
+.vscode/
+.idea/
