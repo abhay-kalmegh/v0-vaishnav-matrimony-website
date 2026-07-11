@@ -125,7 +125,7 @@ export function DashboardContent() {
               return (
                 <Link
                   key={match.id}
-                  href={`/dashboard/profile/${match.profile}`}
+                  href={`/dashboard/profile/view?id=${match.profile}`}
                 >
                   <div className="group rounded-lg border border-border bg-card overflow-hidden hover:shadow-lg transition cursor-pointer">
                     <div className="relative h-48 bg-muted">

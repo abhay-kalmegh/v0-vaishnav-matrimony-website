@@ -3,7 +3,7 @@ import { ProfileViewContent } from '@/components/dashboard/profile-view-content'
 
 export default function ProfileViewPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireProfileComplete>
       <ProfileViewContent />
     </ProtectedRoute>
   )

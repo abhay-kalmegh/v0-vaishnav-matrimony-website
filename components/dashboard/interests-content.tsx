@@ -144,7 +144,7 @@ export function InterestsContent() {
                   )}
 
                   {(activeTab === 'sent' || activeTab === 'accepted') && (
-                    <Link href={`/dashboard/profile/${interest.to_profile_data?.user?.id}`}>
+                    <Link href={`/dashboard/profile/view?id=${interest.to_profile_data?.id}`}>
                       <Button size="sm" variant="outline">
                         View Profile
                       </Button>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/context/auth-context'
 import profileAPI from '@/lib/api/profiles'
 import interestsAPI from '@/lib/api/interests'
@@ -28,14 +28,14 @@ import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 
 export function ProfileViewContent() {
-  const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const { user } = useAuth()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
 
-  const profileId = params.id as string
+  const profileId = searchParams.get('id') as string
 
   useEffect(() => {
     const fetchProfile = async () => {

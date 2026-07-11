@@ -217,7 +217,7 @@ export function SearchContent() {
               </div>
 
               <div className="p-4">
-                <Link href={`/dashboard/profile/${profile.id}`}>
+                <Link href={`/dashboard/profile/view?id=${profile.id}`}>
                   <h3 className="font-serif text-lg font-bold text-foreground hover:text-primary transition">
                     {profile.user?.first_name} {profile.user?.last_name}
                   </h3>
