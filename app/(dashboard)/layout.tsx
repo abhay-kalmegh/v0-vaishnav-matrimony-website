@@ -18,7 +18,7 @@ import {
   Bell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { MobileLayout } from "@/components/mobile/mobile-layout"
+import { BottomNavigation } from "@/components/mobile/bottom-navigation"
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -40,8 +40,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <MobileLayout>
-      <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:static lg:translate-x-0 ${
@@ -156,7 +155,10 @@ export default function DashboardLayout({
         {/* Page Content */}
         <main className="flex-1 p-6">{children}</main>
       </div>
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
+      {/* Bottom Navigation Spacer */}
+      <div className="h-20 md:hidden" />
       </div>
-    </MobileLayout>
   )
 }
