@@ -1,6 +1,8 @@
 import { ProtectedRoute } from '@/lib/components/protected-route'
 import { SuggestionsContent } from '@/components/dashboard/suggestions-content'
 
+export const dynamic = 'force-dynamic'
+
 export default function SuggestionsPage() {
   return (
     <ProtectedRoute requireProfileComplete>
