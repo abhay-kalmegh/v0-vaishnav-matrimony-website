@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Phone, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/context/auth-context';
 
+export const dynamic = 'force-dynamic'
+
 export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
