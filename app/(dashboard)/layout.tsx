@@ -153,12 +153,13 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">{children}</main>
       </div>
-      {/* Mobile Bottom Navigation */}
-      <BottomNavigation />
-      {/* Bottom Navigation Spacer */}
-      <div className="h-20 md:hidden" />
+
+      {/* Mobile Bottom Navigation - Positioned absolutely within layout */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
+        <BottomNavigation />
       </div>
+    </div>
   )
 }
