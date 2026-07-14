@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <color name="colorAccent">#D4A853</color>
+    <color name="colorPrimary">#1D5D62</color>
+    <color name="colorPrimaryDark">#FFFFFF</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="nav_bar_color">#FFFFFF</color>
+    <color name="splash_background">#FFFFFF</color>
+    <color name="status_bar_color">#FFFFFF</color>
+    <item name="ic_launcher" type="drawable">@drawable/ic_launcher_legacy</item>
+    <item name="ic_launcher_round" type="drawable">@drawable/ic_launcher_legacy</item>
+    <string name="app_name">Vaishnav Vivaah</string>
+    <string name="custom_url_scheme">com.vaishnav.vivaah</string>
+    <string name="package_name">com.vaishnav.vivaah</string>
+    <string name="title_activity_main">Vaishnav Vivaah</string>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/status_bar_color</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/nav_bar_color</item>
+        <item name="android:windowLightNavigationBar" ns1:targetApi="27">true</item>
+    </style>
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:statusBarColor">@color/status_bar_color</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+    </style>
+</resources>
