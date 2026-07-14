@@ -1,0 +1,6 @@
+{
+  "primaryBranch": "feature/POO2",
+  "autoCommitBranch": "feature/POO2",
+  "skipBranches": ["v0/abhaykalmegh-4712-9bc1885f"],
+  "description": "v0 Vaishnav Vivaah Matrimony Website - Using feature/POO2 as main development branch"
+}
