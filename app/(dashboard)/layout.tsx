@@ -18,6 +18,7 @@ import {
   Bell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BottomNavigation } from "@/components/mobile/bottom-navigation"
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -152,7 +153,12 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">{children}</main>
+      </div>
+
+      {/* Mobile Bottom Navigation - Positioned absolutely within layout */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
+        <BottomNavigation />
       </div>
     </div>
   )
