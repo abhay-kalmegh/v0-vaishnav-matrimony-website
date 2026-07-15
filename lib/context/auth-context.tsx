@@ -2,6 +2,43 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authAPI, { AuthResponse } from '../api/auth';
+import { Preferences } from '@capacitor/preferences';
+
+// Helper functions for cross-platform storage
+const getStorageValue = async (key: string): Promise<string | null> => {
+  try {
+    const { value } = await Preferences.get({ key });
+    if (value) return value;
+  } catch (e) {
+    // Fallback
+  }
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+const setStorageValue = async (key: string, value: string): Promise<void> => {
+  try {
+    await Preferences.set({ key, value });
+  } catch (e) {
+    // Fallback
+  }
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, value);
+  }
+};
+
+const removeStorageValue = async (key: string): Promise<void> => {
+  try {
+    await Preferences.remove({ key });
+  } catch (e) {
+    // Fallback
+  }
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(key);
+  }
+};
 
 interface AuthContextType {
   user: AuthResponse['user'] | null;
@@ -22,12 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if user is logged in on mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      refreshUser();
-    } else {
-      setIsLoading(false);
-    }
+    const checkAuth = async () => {
+      const token = await getStorageValue('access_token');
+      if (token) {
+        refreshUser();
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const sendOtp = async (phone: string) => {
@@ -43,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authAPI.verifyOtp({ phone, otp });
-      localStorage.setItem('access_token', response.access);
-      localStorage.setItem('refresh_token', response.refresh);
+      await setStorageValue('access_token', response.access);
+      await setStorageValue('refresh_token', response.refresh);
       setUser(response.user);
     } catch (error) {
       console.error('Login error:', error);
@@ -58,8 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authAPI.register(data);
-      localStorage.setItem('access_token', response.access);
-      localStorage.setItem('refresh_token', response.refresh);
+      await setStorageValue('access_token', response.access);
+      await setStorageValue('refresh_token', response.refresh);
       setUser(response.user);
     } catch (error) {
       console.error('Register error:', error);
@@ -75,8 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      await removeStorageValue('access_token');
+      await removeStorageValue('refresh_token');
       setUser(null);
     }
   };
@@ -87,8 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response);
     } catch (error) {
       console.error('Refresh user error:', error);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      await removeStorageValue('access_token');
+      await removeStorageValue('refresh_token');
       setUser(null);
     } finally {
       setIsLoading(false);

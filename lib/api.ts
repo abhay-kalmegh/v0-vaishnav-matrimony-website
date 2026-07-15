@@ -1,6 +1,49 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { Preferences } from '@capacitor/preferences';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// Helper function for cross-platform token storage
+const getStorageValue = async (key: string): Promise<string | null> => {
+  try {
+    // Try Capacitor Preferences (Android/iOS)
+    const { value } = await Preferences.get({ key });
+    if (value) return value;
+  } catch (e) {
+    // Fallback to localStorage (web)
+  }
+
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+const setStorageValue = async (key: string, value: string): Promise<void> => {
+  try {
+    // Try Capacitor Preferences (Android/iOS)
+    await Preferences.set({ key, value });
+  } catch (e) {
+    // Fallback to localStorage (web)
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, value);
+  }
+};
+
+const removeStorageValue = async (key: string): Promise<void> => {
+  try {
+    // Try Capacitor Preferences (Android/iOS)
+    await Preferences.remove({ key });
+  } catch (e) {
+    // Fallback to localStorage (web)
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(key);
+  }
+};
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -11,8 +54,8 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Add token interceptor
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  async (config) => {
+    const token = await getStorageValue('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,22 +74,24 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = await getStorageValue('refresh_token');
         if (refreshToken) {
           const response = await axios.post(`${API_URL}/auth/token/refresh/`, {
             refresh: refreshToken,
           });
 
           const { access } = response.data;
-          localStorage.setItem('access_token', access);
+          await setStorageValue('access_token', access);
 
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        await removeStorageValue('access_token');
+        await removeStorageValue('refresh_token');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
