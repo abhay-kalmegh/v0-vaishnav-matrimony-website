@@ -18,6 +18,8 @@ import {
   Bell,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ProtectedRoute } from "@/components/protected-route"
+import { useAuth } from "@/lib/context/auth-context"
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -37,8 +39,10 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { logout } = useAuth()
 
   return (
+    <ProtectedRoute>
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside
@@ -107,7 +111,14 @@ export default function DashboardLayout({
               <p className="truncate text-sm font-medium text-foreground">Rajesh Das</p>
               <p className="truncate text-xs text-muted-foreground">ISKCON - Mumbai</p>
             </div>
-            <button className="text-muted-foreground hover:text-foreground" aria-label="Logout">
+            <button 
+              className="text-muted-foreground hover:text-foreground" 
+              aria-label="Logout"
+              onClick={async () => {
+                await logout();
+                window.location.href = '/login';
+              }}
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>
@@ -155,5 +166,6 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">{children}</main>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

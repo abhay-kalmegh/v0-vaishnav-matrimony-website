@@ -4,6 +4,7 @@ import "./globals.css"
 import { AuthProvider } from "@/lib/context/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import { MobileLayout } from "@/components/mobile/mobile-layout"
+import { Toaster } from "@/components/toaster"
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
               {children}
             </MobileLayout>
           </AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

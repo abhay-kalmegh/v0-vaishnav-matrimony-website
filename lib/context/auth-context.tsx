@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authAPI, { AuthResponse } from '../api/auth';
 import { Preferences } from '@capacitor/preferences';
+import { toast } from 'sonner';
 
 // Helper functions for cross-platform storage
 const getStorageValue = async (key: string): Promise<string | null> => {
@@ -74,8 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendOtp = async (phone: string) => {
     try {
       await authAPI.sendOtp({ phone });
+      toast.success('OTP sent to your phone. Check your messages.');
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to send OTP. Please try again.';
       console.error('Send OTP error:', error);
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -87,8 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setStorageValue('access_token', response.access);
       await setStorageValue('refresh_token', response.refresh);
       setUser(response.user);
+      toast.success('Login successful! Welcome to Vaishnav Vivaah.');
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to verify OTP. Please try again.';
       console.error('Login error:', error);
+      toast.error(errorMsg);
       throw error;
     } finally {
       setIsLoading(false);
@@ -102,8 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setStorageValue('access_token', response.access);
       await setStorageValue('refresh_token', response.refresh);
       setUser(response.user);
+      toast.success('Registration successful! Welcome to Vaishnav Vivaah.');
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Registration failed. Please check your details and try again.';
       console.error('Register error:', error);
+      toast.error(errorMsg);
       throw error;
     } finally {
       setIsLoading(false);
@@ -113,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await authAPI.logout();
+      toast.success('Logged out successfully.');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
