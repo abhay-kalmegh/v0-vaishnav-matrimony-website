@@ -27,7 +27,8 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         profile, _created = Profile.objects.select_related(
-            "user", "education", "career", "family", "lifestyle", "partner_preference"
+            "user", "education", "career", "family", "lifestyle", "partner_preference",
+            "spiritual_profile", "spiritual_practices"
         ).prefetch_related("photos").get_or_create(user=self.request.user)
         return profile
 
@@ -38,7 +39,8 @@ class ProfileDetailView(generics.RetrieveAPIView):
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.select_related(
-        "user", "education", "career", "family", "lifestyle", "partner_preference"
+        "user", "education", "career", "family", "lifestyle", "partner_preference",
+        "spiritual_profile", "spiritual_practices"
     ).prefetch_related("photos")
     lookup_field = "id"
 

@@ -1,81 +1,79 @@
 import apiClient from '../api';
 
 export interface Profile {
-  id: number;
-  user: number;
-  bio: string;
+  id: string;
+  user: any;
+  about_me: string;
   age: number;
-  height: string;
-  caste: string;
-  city: string;
+  height_cm: number;
+  marital_status: string;
+  current_city: string;
   state: string;
-  occupation: string;
-  income_range: string;
   photos: any[];
-  is_verified: boolean;
+  is_approved: boolean;
   created_at: string;
   updated_at: string;
+  education?: any;
+  career?: any;
+  family?: any;
+  lifestyle?: any;
 }
 
 export interface ProfileUpdate {
-  bio?: string;
-  height?: string;
-  caste?: string;
-  city?: string;
+  about_me?: string;
+  height_cm?: number;
+  marital_status?: string;
+  current_city?: string;
   state?: string;
-  occupation?: string;
-  income_range?: string;
+  country?: string;
 }
 
 const profilesAPI = {
   getMyProfile: async () => {
-    const response = await apiClient.get<Profile>('/profiles/me/');
+    const response = await apiClient.get<Profile>('/profile/me/');
     return response.data;
   },
 
   updateProfile: async (data: ProfileUpdate) => {
-    const response = await apiClient.patch<Profile>('/profiles/me/', data);
+    const response = await apiClient.patch<Profile>('/profile/me/', data);
     return response.data;
   },
 
-  getProfile: async (id: number) => {
-    const response = await apiClient.get<Profile>(`/profiles/${id}/`);
+  getProfile: async (id: string) => {
+    const response = await apiClient.get<Profile>(`/profile/${id}/`);
     return response.data;
   },
 
   searchProfiles: async (filters: {
-    age_min?: number;
-    age_max?: number;
+    min_age?: number;
+    max_age?: number;
     gender?: string;
-    sampraday?: number;
+    sampraday?: string;
     city?: string;
     limit?: number;
     offset?: number;
   }) => {
-    const response = await apiClient.get<{ count: number; results: Profile[] }>('/profiles/search/', {
+    const response = await apiClient.get<{ count: number; results: Profile[] }>('/profile/search/', {
       params: filters,
     });
     return response.data;
   },
 
-  uploadPhoto: async (profileId: number, file: File) => {
+  uploadPhoto: async (file: File) => {
     const formData = new FormData();
-    formData.append('image', file);
-    const response = await apiClient.post(`/profiles/${profileId}/upload-photo/`, formData, {
+    formData.append('photo', file);
+    const response = await apiClient.post(`/profile/photos/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
   },
 
-  deletePhoto: async (photoId: number) => {
-    await apiClient.delete(`/profiles/photos/${photoId}/`);
+  deletePhoto: async (photoId: string) => {
+    await apiClient.delete(`/profile/photos/`, { data: { photo_id: photoId } });
   },
 
-  completeProfileSetup: async (step: string, data: any) => {
-    const response = await apiClient.post('/profiles/complete-setup/', {
-      step,
-      data,
-    });
+  completeProfileSetup: async (data: any) => {
+    const response = await apiClient.patch('/profile/me/', data);
     return response.data;
   },
 };

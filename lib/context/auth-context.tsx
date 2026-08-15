@@ -88,9 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authAPI.verifyOtp({ phone, otp });
-      await setStorageValue('access_token', response.access);
-      await setStorageValue('refresh_token', response.refresh);
-      setUser(response.user);
+      await setStorageValue('access_token', response.tokens.access);
+      await setStorageValue('refresh_token', response.tokens.refresh);
+      setUser(response.user as any);
       toast.success('Login successful! Welcome to Vaishnav Vivaah.');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to verify OTP. Please try again.';
@@ -106,9 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authAPI.register(data);
-      await setStorageValue('access_token', response.access);
-      await setStorageValue('refresh_token', response.refresh);
-      setUser(response.user);
+      await setStorageValue('access_token', response.tokens.access);
+      await setStorageValue('refresh_token', response.tokens.refresh);
+      setUser(response.user as any);
       toast.success('Registration successful! Welcome to Vaishnav Vivaah.');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Registration failed. Please check your details and try again.';

@@ -1,63 +1,59 @@
 import apiClient from '../api';
 
 export interface Interest {
-  id: number;
-  from_user: number;
-  to_user: number;
-  to_profile_data: {
-    user: { first_name: string; last_name: string };
-    age: number;
-    city: string;
-  };
+  id: string;
+  sender: any;
+  receiver: any;
   status: 'pending' | 'accepted' | 'rejected';
+  message: string;
   created_at: string;
+  responded_at?: string;
 }
 
 export interface Shortlist {
-  id: number;
-  profile: number;
-  profile_data: any;
+  id: string;
+  shortlisted_profile: any;
   created_at: string;
 }
 
 const interestsAPI = {
-  sendInterest: async (toUserId: number) => {
+  sendInterest: async (receiverProfileId: string, message: string = "") => {
     const response = await apiClient.post('/interests/send/', {
-      to_user: toUserId,
+      receiver_id: receiverProfileId,
+      message: message
     });
     return response.data;
   },
 
-  respondToInterest: async (interestId: number, status: 'accepted' | 'rejected') => {
-    const response = await apiClient.post(`/interests/${interestId}/respond/`, { status });
-    return response.data;
-  },
-
-  getReceivedInterests: async (status?: string) => {
-    const response = await apiClient.get<Interest[]>('/interests/received/', {
-      params: status ? { status } : {},
+  respondToInterest: async (interestId: string, action: 'accepted' | 'rejected') => {
+    const response = await apiClient.post(`/interests/respond/`, {
+      interest_id: interestId,
+      action: action
     });
     return response.data;
   },
 
-  getSentInterests: async (status?: string) => {
-    const response = await apiClient.get<Interest[]>('/interests/sent/', {
-      params: status ? { status } : {},
-    });
+  getReceivedInterests: async () => {
+    const response = await apiClient.get<Interest[]>('/interests/received/');
     return response.data;
   },
 
-  addToShortlist: async (profileId: number) => {
-    const response = await apiClient.post('/shortlist/add/', { profile: profileId });
+  getSentInterests: async () => {
+    const response = await apiClient.get<Interest[]>('/interests/sent/');
     return response.data;
   },
 
-  removeFromShortlist: async (shortlistId: number) => {
-    const response = await apiClient.delete(`/shortlist/${shortlistId}/`);
+  addToShortlist: async (profileId: string) => {
+    const response = await apiClient.post('/interests/shortlist/', { shortlisted_profile_id: profileId });
+    return response.data;
+  },
+
+  removeFromShortlist: async (shortlistId: string) => {
+    await apiClient.delete(`/interests/shortlist/${shortlistId}/`);
   },
 
   getShortlist: async () => {
-    const response = await apiClient.get<Shortlist[]>('/shortlist/');
+    const response = await apiClient.get<Shortlist[]>('/interests/shortlist/');
     return response.data;
   },
 };

@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from apps.accounts.serializers import UserSerializer
+from apps.spirituality.serializers import SpiritualPracticeSerializer, SpiritualProfileSerializer
 from .models import (
     Career,
     Education,
@@ -97,6 +98,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     family = FamilyDetailsSerializer(required=False)
     lifestyle = LifestyleSerializer(required=False)
     partner_preference = PartnerPreferenceSerializer(required=False)
+    spiritual_profile = SpiritualProfileSerializer(required=False)
+    spiritual_practices = SpiritualPracticeSerializer(required=False)
     photos = ProfilePhotoSerializer(many=True, read_only=True)
 
     class Meta:
@@ -123,6 +126,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "family",
             "lifestyle",
             "partner_preference",
+            "spiritual_profile",
+            "spiritual_practices",
             "photos",
             "created_at",
             "updated_at",
@@ -131,12 +136,15 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Handle nested updates for education, career, family, lifestyle, preferences."""
+        from apps.spirituality.models import SpiritualPractice, SpiritualProfile
         nested_fields = {
             "education": (Education, EducationSerializer),
             "career": (Career, CareerSerializer),
             "family": (FamilyDetails, FamilyDetailsSerializer),
             "lifestyle": (Lifestyle, LifestyleSerializer),
             "partner_preference": (PartnerPreference, PartnerPreferenceSerializer),
+            "spiritual_profile": (SpiritualProfile, SpiritualProfileSerializer),
+            "spiritual_practices": (SpiritualPractice, SpiritualPracticeSerializer),
         }
 
         for field_name, (ModelClass, _SerializerClass) in nested_fields.items():

@@ -1392,3 +1392,4 @@ styleable ViewStubCompat android_id android_layout android_inflatedId
 styleable bridge_fragment start_dir
 xml config
 xml file_paths
+xml network_security_config

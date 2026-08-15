@@ -101,10 +101,30 @@ class VerifyOTPView(APIView):
 
 
 class RegisterView(generics.CreateAPIView):
-    """Complete user registration after OTP verification."""
+    """Complete user registration and return JWT tokens."""
 
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "message": "User registered successfully",
+                "tokens": {
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                },
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MeView(generics.RetrieveUpdateAPIView):

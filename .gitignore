@@ -1,12 +1,56 @@
+# Next.js & Node
+node_modules/
+.next/
+out/
+build/
+.npm
+.eslintcache
+*.log
+package-lock.json
+pnpm-lock.yaml
+
+# Capacitor & Android
+# We keep the android/ directory but ignore build artifacts
+android/app/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/debug/
+android/release/
+*.apk
+*.aar
+*.jks
+
+# Django / Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+backend/db.sqlite3
+backend/staticfiles/
+backend/media/
+backend/.env
+
+# Environment & Secrets
+.env
+.env.local
+.env.production
+.env.development
+*.pem
+
+# IDEs & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
 # v0 runtime files
 __v0_runtime_loader.js
 __v0_devtools.tsx
 __v0_jsx-dev-runtime.ts
-
-# Common ignores
-node_modules/
-.next/
-.env*.local
-.DS_Store
-.idea
-out/

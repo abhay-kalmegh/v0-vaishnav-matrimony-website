@@ -131,7 +131,7 @@ export function DashboardContent() {
                     <div className="relative h-48 bg-muted">
                       {profileData?.photos?.length > 0 ? (
                         <Image
-                          src={profileData.photos[0].image}
+                          src={profileData.photos[0].photo}
                           alt={profileData.user?.first_name}
                           fill
                           className="object-cover group-hover:scale-105 transition"

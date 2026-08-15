@@ -10,37 +10,44 @@ export interface VerifyOtpRequest {
 }
 
 export interface AuthResponse {
-  access: string;
-  refresh: string;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
   user: {
-    id: number;
-    phone: string;
+    id: string;
+    mobile_number: string;
     email?: string;
     first_name?: string;
     last_name?: string;
     is_verified: boolean;
-    profile_completed: boolean;
+    role: string;
   };
+  is_new_user: boolean;
 }
 
 export interface RegisterRequest {
-  phone: string;
+  mobile_number: string;
   email: string;
   first_name: string;
   last_name: string;
-  date_of_birth: string;
   gender: string;
-  sampraday: number;
+  role: string;
 }
 
 const authAPI = {
   sendOtp: async (data: SendOtpRequest) => {
-    const response = await apiClient.post<AuthResponse>('/auth/send-otp/', data);
+    const response = await apiClient.post('/auth/send-otp/', {
+      mobile_number: data.phone
+    });
     return response.data;
   },
 
   verifyOtp: async (data: VerifyOtpRequest) => {
-    const response = await apiClient.post<AuthResponse>('/auth/verify-otp/', data);
+    const response = await apiClient.post<AuthResponse>('/auth/verify-otp/', {
+      mobile_number: data.phone,
+      otp_code: data.otp
+    });
     return response.data;
   },
 
@@ -57,7 +64,14 @@ const authAPI = {
   },
 
   logout: async () => {
-    await apiClient.post('/auth/logout/');
+    // Backend doesn't have a specific logout endpoint in urls.py yet,
+    // but typically it's just client-side token removal or blacklisting.
+    // If you add blacklisting later, this will be ready.
+    try {
+      await apiClient.post('/auth/logout/');
+    } catch (e) {
+      // Ignore if endpoint doesn't exist
+    }
   },
 
   getCurrentUser: async () => {
