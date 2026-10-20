@@ -186,6 +186,8 @@ CORS_ALLOWED_ORIGINS = env.list(
         "http://127.0.0.1:3000",
         "http://localhost",
         "https://localhost",
+        "http://192.168.1.7:3000",
+        "http://192.168.1.7",
     ],
 )
 CORS_ALLOW_CREDENTIALS = True

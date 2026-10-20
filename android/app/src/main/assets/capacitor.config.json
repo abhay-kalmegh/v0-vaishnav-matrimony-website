@@ -5,9 +5,7 @@
 	"bundledWebRuntime": false,
 	"server": {
 		"androidScheme": "https",
-		"hostname": "localhost",
-		"iosScheme": "capacitor",
-		"cleartext": true
+		"iosScheme": "capacitor"
 	},
 	"plugins": {
 		"SplashScreen": {
