@@ -78,9 +78,16 @@ class ProfileSearchView(generics.ListAPIView):
 
             today = timezone.now().date()
             if max_age:
-                qs = qs.filter(date_of_birth__lte=today - timedelta(days=int(max_age) * 365))
+                # age <= max_age  <=>  born on or after (today - (max_age+1) years)
+                qs = qs.filter(date_of_birth__gt=today - timedelta(days=(int(max_age) + 1) * 365))
             if min_age:
-                qs = qs.filter(date_of_birth__gte=today - timedelta(days=int(min_age) * 365))
+                # age >= min_age  <=>  born on or before (today - min_age years)
+                qs = qs.filter(date_of_birth__lte=today - timedelta(days=int(min_age) * 365))
+
+        # Gender filtering (the app sends ?gender=male|female)
+        gender = self.request.query_params.get("gender")
+        if gender:
+            qs = qs.filter(user__gender=gender)
 
         # Sampraday filtering
         sampraday = self.request.query_params.get("sampraday")
@@ -94,7 +101,7 @@ class PhotoUploadView(APIView):
     """Upload photos for the authenticated user's profile."""
 
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
     def post(self, request):
         profile = request.user.profile
