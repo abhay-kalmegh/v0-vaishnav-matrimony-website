@@ -1,14 +1,17 @@
 """API views for authentication — OTP send/verify, JWT tokens, user info."""
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import OTPVerification, User
 from .serializers import (
     RegisterSerializer,
+    CurrentUserSerializer,
     SendOTPSerializer,
     UserSerializer,
     VerifyOTPSerializer,
@@ -35,13 +38,12 @@ class SendOTPView(APIView):
 
         # TODO: Integrate SMS gateway (Twilio / MSG91) to send OTP
         # For development, return OTP in response
-        return Response(
-            {
-                "message": "OTP sent successfully",
-                "otp": otp.otp_code if True else None,  # Remove in production
-            },
-            status=status.HTTP_200_OK,
-        )
+        payload = {"message": "OTP sent successfully"}
+        if settings.DEBUG:
+            # Development convenience only. Never expose the OTP in production:
+            # anyone could otherwise log in as any phone number.
+            payload["otp"] = otp.otp_code
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class VerifyOTPView(APIView):
@@ -94,7 +96,7 @@ class VerifyOTPView(APIView):
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
                 },
-                "user": UserSerializer(user).data,
+                "user": CurrentUserSerializer(user).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -121,7 +123,7 @@ class RegisterView(generics.CreateAPIView):
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
                 },
-                "user": UserSerializer(user).data,
+                "user": CurrentUserSerializer(user).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -130,8 +132,23 @@ class RegisterView(generics.CreateAPIView):
 class MeView(generics.RetrieveUpdateAPIView):
     """Get or update current authenticated user."""
 
-    serializer_class = UserSerializer
+    serializer_class = CurrentUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+
+class LogoutView(APIView):
+    """Invalidate the refresh token. The client also discards its tokens."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        refresh = request.data.get("refresh")
+        if refresh:
+            try:
+                RefreshToken(refresh).blacklist()
+            except TokenError:
+                pass  # already expired/invalid - nothing to revoke
+        return Response({"message": "Logged out"}, status=status.HTTP_200_OK)

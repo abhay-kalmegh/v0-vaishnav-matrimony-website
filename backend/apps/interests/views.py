@@ -5,6 +5,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.messaging.models import Conversation
 from apps.profiles.models import Profile
 from .models import Interest, Shortlist
 from .serializers import (
@@ -90,6 +91,16 @@ class RespondInterestView(APIView):
         interest.status = serializer.validated_data["action"]
         interest.responded_at = timezone.now()
         interest.save(update_fields=["status", "responded_at"])
+
+        if interest.status == Interest.Status.ACCEPTED:
+            # Chat unlocks on mutual interest; nothing else creates conversations.
+            if not Conversation.objects.filter(
+                profile_1__in=[interest.sender, interest.receiver],
+                profile_2__in=[interest.sender, interest.receiver],
+            ).exists():
+                Conversation.objects.create(
+                    profile_1=interest.sender, profile_2=interest.receiver
+                )
 
         return Response(InterestSerializer(interest).data)
 

@@ -47,3 +47,25 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
         ]
         read_only_fields = ["id", "date_joined", "is_verified"]
+
+
+class CurrentUserSerializer(UserSerializer):
+    """The authenticated user's own record (adds onboarding state for the app).
+
+    ``profile_completed`` drives the app's ProtectedRoute: a profile counts as
+    complete once the user has filled in the "about me" text and height - the
+    fields the app's profile editor collects.
+    """
+
+    profile_completed = serializers.SerializerMethodField()
+    is_profile_complete = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ["profile_completed", "is_profile_complete"]
+
+    def get_profile_completed(self, obj):
+        profile = getattr(obj, "profile", None)  # RelatedObjectDoesNotExist is an AttributeError
+        return bool(profile and profile.about_me and profile.height_cm)
+
+    def get_is_profile_complete(self, obj):
+        return self.get_profile_completed(obj)
