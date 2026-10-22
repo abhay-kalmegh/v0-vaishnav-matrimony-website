@@ -51,12 +51,30 @@ class SendInterestView(APIView):
 
         sender = request.user.profile
         try:
-            receiver = Profile.objects.get(id=serializer.validated_data["receiver_id"])
+            # Unapproved profiles are invisible to other members, so they cannot be contacted.
+            receiver = Profile.objects.get(id=serializer.validated_data["receiver_id"], is_approved=True)
         except Profile.DoesNotExist:
             return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if sender == receiver:
             return Response({"error": "Cannot send interest to yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.profiles.completion import evaluate
+
+        if not evaluate(sender).complete:
+            return Response(
+                {"error": "Complete your profile before sending interests.", "missing_fields": evaluate(sender).missing},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reverse = Interest.objects.filter(sender=receiver, receiver=sender).first()
+        if reverse is not None:
+            msg = (
+                "You are already connected with this member."
+                if reverse.status == Interest.Status.ACCEPTED
+                else "This member has already sent you an interest - respond to it instead."
+            )
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
 
         interest, created = Interest.objects.get_or_create(
             sender=sender,
@@ -118,6 +136,7 @@ class ShortlistView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(profile=self.request.user.profile)
+
 
 
 class ShortlistDeleteView(generics.DestroyAPIView):

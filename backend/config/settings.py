@@ -13,9 +13,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-SECRET_KEY = env("SECRET_KEY", default="change-me-in-production-!@#$%^&*()")
-DEBUG = env("DEBUG", default=False)  # Set to False for production
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+_INSECURE_DEV_KEY = "insecure-development-key-do-not-use-in-production"
+DEBUG = env("DEBUG", default=False)  # Never True in production
+SECRET_KEY = env("SECRET_KEY", default=_INSECURE_DEV_KEY if DEBUG else None)
+if not SECRET_KEY or (not DEBUG and SECRET_KEY == _INSECURE_DEV_KEY):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("SECRET_KEY must be set (via environment) when DEBUG is False.")
+if not DEBUG and len(SECRET_KEY) < 32:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("SECRET_KEY is too short; use at least 32 random characters.")
+
+# Production must name its hosts explicitly; "*" is only a development default.
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"] if DEBUG else [])
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Serve the admin from a non-default path in production (e.g. ADMIN_URL=manage-xyz/).
+ADMIN_URL = env("ADMIN_URL", default="admin/")
 
 # ──────────────────────────────────────────────
 # Application definition
@@ -165,6 +179,17 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_ANON", default="100/hour"),
+        "user": env("THROTTLE_USER", default="3000/hour"),
+        # per-IP limits on the OTP endpoints (per-number limits live in the views)
+        "otp_send": env("THROTTLE_OTP_SEND", default="20/hour"),
+        "otp_verify": env("THROTTLE_OTP_VERIFY", default="60/hour"),
+    },
 }
 
 # ──────────────────────────────────────────────
@@ -194,7 +219,8 @@ CORS_ALLOWED_ORIGINS = env.list(
         "http://192.168.1.7",
     ],
 )
-CORS_ALLOW_CREDENTIALS = True
+# Auth uses Bearer tokens, not cookies, so credentialed CORS is not needed.
+CORS_ALLOW_CREDENTIALS = False
 
 # ──────────────────────────────────────────────
 # Celery (for background tasks like matching)
@@ -222,5 +248,22 @@ SPECTACULAR_SETTINGS = {
 
 OTP_EXPIRY_MINUTES = 5
 OTP_LENGTH = 6
+OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)  # wrong guesses before the code is burned
+OTP_RESEND_COOLDOWN_SECONDS = env.int("OTP_RESEND_COOLDOWN_SECONDS", default=60)
+OTP_MAX_SENDS_PER_HOUR = env.int("OTP_MAX_SENDS_PER_HOUR", default=5)  # per mobile number
+
+# Uploads
+MAX_PHOTO_BYTES = env.int("MAX_PHOTO_BYTES", default=5 * 1024 * 1024)
+MAX_PHOTOS_PER_PROFILE = env.int("MAX_PHOTOS_PER_PROFILE", default=6)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"std": {"format": "%(asctime)s %(levelname)s %(name)s %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std"}},
+    "root": {"handlers": ["console"], "level": env("LOG_LEVEL", default="INFO")},
+    "loggers": {"django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False}},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

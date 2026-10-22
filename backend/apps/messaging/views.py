@@ -43,7 +43,9 @@ class ConversationMessagesView(generics.ListAPIView):
         response = super().list(request, *args, **kwargs)
         # Mark messages as read
         profile = request.user.profile
+        # Only touch conversations the caller actually participates in.
         Message.objects.filter(
+            Q(conversation__profile_1=profile) | Q(conversation__profile_2=profile),
             conversation_id=self.kwargs["conversation_id"],
             is_read=False,
         ).exclude(sender=profile).update(is_read=True)

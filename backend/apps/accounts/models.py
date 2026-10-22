@@ -1,7 +1,8 @@
 """Custom User model and OTP verification for Vaishnav Vivaah."""
 
+import secrets
 import uuid
-import random
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
@@ -79,6 +80,7 @@ class OTPVerification(models.Model):
     mobile_number = models.CharField(max_length=15, db_index=True)
     otp_code = models.CharField(max_length=6)
     is_verified = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
@@ -90,9 +92,9 @@ class OTPVerification(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.otp_code:
-            self.otp_code = str(random.randint(100000, 999999))
+            self.otp_code = f"{secrets.randbelow(900000) + 100000}"  # CSPRNG, 6 digits
         if not self.expires_at:
-            self.expires_at = timezone.now() + timezone.timedelta(
+            self.expires_at = timezone.now() + timedelta(
                 minutes=getattr(settings, "OTP_EXPIRY_MINUTES", 5)
             )
         super().save(*args, **kwargs)

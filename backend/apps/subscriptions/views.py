@@ -38,13 +38,21 @@ class SubscribeView(APIView):
 
     def post(self, request):
         plan_id = request.data.get("plan_id")
-        transaction_id = request.data.get("transaction_id", "")
-        payment_gateway = request.data.get("payment_gateway", "razorpay")
 
         try:
             plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
         except SubscriptionPlan.DoesNotExist:
             return Response({"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # No payment gateway is integrated, so a paid plan can never be *verified*.
+        # Trusting a client-supplied transaction_id would let anyone grant themselves
+        # a paid subscription for free, so paid plans are refused until a gateway
+        # (create-order + signed webhook verification) is implemented.
+        if plan.price > 0:
+            return Response(
+                {"error": "Online payments are not enabled yet."},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
 
         profile = request.user.profile
 
@@ -56,16 +64,6 @@ class SubscribeView(APIView):
             profile=profile,
             plan=plan,
             end_date=timezone.now() + timedelta(days=plan.duration_days),
-        )
-
-        # Record payment
-        Payment.objects.create(
-            subscription=subscription,
-            amount=plan.price,
-            payment_gateway=payment_gateway,
-            transaction_id=transaction_id,
-            status=Payment.PaymentStatus.SUCCESS,
-            paid_at=timezone.now(),
         )
 
         return Response(
