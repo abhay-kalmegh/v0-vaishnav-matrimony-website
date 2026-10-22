@@ -118,11 +118,23 @@ if not DEBUG:
 # Database
 # ──────────────────────────────────────────────
 
+# DATABASES = {
+#     "default": env.db(
+#         "DATABASE_URL",
+#         default="postgresql://postgres:postgres@localhost:5432/vaishnav_vivaah",
+#     )
+# }
+# import os
+
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default="postgresql://postgres:postgres@localhost:5432/vaishnav_vivaah",
-    )
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "vaishnav_vivaah"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+    }
 }
 
 # ──────────────────────────────────────────────
@@ -207,6 +219,20 @@ SIMPLE_JWT = {
 # ──────────────────────────────────────────────
 # CORS
 # ──────────────────────────────────────────────
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=["127.0.0.1", "localhost"] if DEBUG else [],
+)
+
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ] if DEBUG else [],
+)
 
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
@@ -217,6 +243,8 @@ CORS_ALLOWED_ORIGINS = env.list(
         "https://localhost",
         "http://192.168.1.7:3000",
         "http://192.168.1.7",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
     ],
 )
 # Auth uses Bearer tokens, not cookies, so credentialed CORS is not needed.
