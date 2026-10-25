@@ -280,6 +280,13 @@ OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)  # wrong guesses befor
 OTP_RESEND_COOLDOWN_SECONDS = env.int("OTP_RESEND_COOLDOWN_SECONDS", default=60)
 OTP_MAX_SENDS_PER_HOUR = env.int("OTP_MAX_SENDS_PER_HOUR", default=5)  # per mobile number
 
+OTP_DEV_MODE = env.bool("OTP_DEV_MODE", default=False)
+
+if OTP_DEV_MODE and not DEBUG:
+    raise ImproperlyConfigured(
+        "OTP_DEV_MODE must not be enabled in production."
+    )
+
 # Uploads
 MAX_PHOTO_BYTES = env.int("MAX_PHOTO_BYTES", default=5 * 1024 * 1024)
 MAX_PHOTOS_PER_PROFILE = env.int("MAX_PHOTOS_PER_PROFILE", default=6)

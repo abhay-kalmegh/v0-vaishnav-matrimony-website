@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { Preferences } from '@capacitor/preferences';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.7:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 // Helper function for cross-platform token storage
 const getStorageValue = async (key: string): Promise<string | null> => {

@@ -54,3 +54,9 @@ Thumbs.db
 __v0_runtime_loader.js
 __v0_devtools.tsx
 __v0_jsx-dev-runtime.ts
+.env
+.env.*
+!.env.example
+
+backend/.env
+frontend/.env
