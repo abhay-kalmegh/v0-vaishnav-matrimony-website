@@ -6,12 +6,21 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+
+# Normal development loads .env.
+# Isolated production tests can skip it.
+if os.environ.get("ENV_FILE_FOR_TEST") != "1":
+    environ.Env.read_env(ENV_FILE)
+
 
 _INSECURE_DEV_KEY = "insecure-development-key-do-not-use-in-production"
 DEBUG = env("DEBUG", default=False)  # Never True in production
