@@ -1,0 +1,13 @@
+Login-redirect fix: files to copy over your working tree (paths relative to the repo root).
+Every file is a complete replacement. Nothing here touches your secrets, migrations or Android assets.
+
+lib/api.ts                          describeError (log-safe), network/timeout messages
+lib/context/auth-context.tsx        validates the login response, login() returns the next route
+app/login/page.tsx                  navigates by account state, blocks double submit, safe logging
+lib/components/protected-route.tsx  replace() instead of push()
+app/register/page.tsx               complete accounts go to /dashboard on arrival
+tests/setup.ts, vitest.config.ts    test environment (JSX, router/link/sonner mocks)
+tests/helpers/harness.tsx, tests/helpers/router.ts, tests/login-flow.test.tsx   26 login-flow tests
+tests/api-client.test.ts            +2 tests
+backend/tests/test_auth.py          +9 verify-otp contract tests
+package.json, package-lock.json     adds @testing-library/react, /dom, /user-event (dev)

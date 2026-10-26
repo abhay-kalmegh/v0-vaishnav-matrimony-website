@@ -16,9 +16,9 @@ export function ProtectedRoute({ children, requireProfileComplete = false }: Pro
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push('/login');
+        router.replace('/login');
       } else if (requireProfileComplete && !user?.profile_completed) {
-        router.push('/register?step=family');
+        router.replace('/register'); // the wizard resumes at the first unfinished step
       }
     }
   }, [isAuthenticated, isLoading, user, requireProfileComplete, router]);

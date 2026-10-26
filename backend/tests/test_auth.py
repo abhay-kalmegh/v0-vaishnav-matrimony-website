@@ -255,3 +255,91 @@ class MeEndpointTests(TestCase):
     def test_cannot_use_another_users_email(self):
         make_user(email="x@example.com")
         self.assertEqual(self.api.patch("/api/auth/me/", {"email": "X@example.com"}, format="json").status_code, 400)
+
+
+@override_settings(OTP_RESEND_COOLDOWN_SECONDS=0)
+class VerifyContractTests(AuthBase):
+    """The response the login page navigates on, and every way verify-otp can answer HTTP 400."""
+
+    CONTRACT = {"message", "is_new_user", "tokens", "user"}
+
+    def verify_for(self, mobile):
+        return self.verify(self.send(mobile).json()["otp"], mobile)
+
+    def test_new_account_contract(self):
+        r = self.verify_for("9300000001")
+        body = r.json()
+        self.assertEqual((r.status_code, set(body)), (200, self.CONTRACT))
+        self.assertEqual(set(body["tokens"]), {"access", "refresh"})
+        self.assertTrue(all(isinstance(v, str) and v for v in body["tokens"].values()))
+        self.assertIs(body["is_new_user"], True)
+        self.assertIs(body["user"]["profile_completed"], False)
+        self.assertIs(body["user"]["is_profile_complete"], False)  # both spellings the app has used
+        self.assertGreater(len(body["user"]["missing_profile_fields"]), 0)
+
+    def test_existing_complete_account_goes_to_the_app(self):
+        user, _p = make_member("male", mobile="9300000002")
+        body = self.verify_for("9300000002").json()
+        self.assertIs(body["is_new_user"], False)
+        self.assertIs(body["user"]["profile_completed"], True)
+        self.assertEqual(body["user"]["missing_profile_fields"], [])
+
+    def test_existing_incomplete_account_is_not_new_but_not_complete(self):
+        make_member("male", mobile="9300000003", complete=False)
+        body = self.verify_for("9300000003").json()
+        self.assertIs(body["is_new_user"], False)  # existing account...
+        self.assertIs(body["user"]["profile_completed"], False)  # ...that must resume onboarding
+        self.assertIn("date_of_birth", body["user"]["missing_profile_fields"])
+
+    def test_completeness_follows_the_data_not_the_account_age(self):
+        # Complete in the database -> complete in the next login, with no manual flag anywhere.
+        user, profile = make_member("male", mobile="9300000004", complete=False)
+        self.assertIs(self.verify_for("9300000004").json()["user"]["profile_completed"], False)
+        from .factories import complete_profile
+
+        complete_profile(profile)
+        self.assertIs(self.verify_for("9300000004").json()["user"]["profile_completed"], True)
+
+    def test_every_400_carries_a_readable_error_and_no_tokens(self):
+        otp = self.send("9300000005").json()["otp"]
+        wrong = "000000" if otp != "000000" else "111111"
+        cases = {
+            "wrong code": self.verify(wrong, "9300000005"),
+            "missing otp field": self.api.post("/api/auth/verify-otp/", {"mobile_number": "9300000005"}, format="json"),
+            "otp under another name": self.api.post("/api/auth/verify-otp/", {"mobile_number": "9300000005", "otp": otp}, format="json"),
+            "short code": self.verify("123", "9300000005"),
+            "never requested": self.verify("123456", "9300000099"),
+        }
+        for name, r in cases.items():
+            self.assertEqual(r.status_code, 400, name)
+            body = r.json()
+            self.assertNotIn("tokens", body, name)
+            self.assertNotIn("user", body, name)
+            self.assertTrue(body.get("error") or any(isinstance(v, list) for v in body.values()), name)
+        self.assertFalse(User.objects.filter(mobile_number__in=["9300000005", "9300000099"]).exists())  # no account for a failed OTP
+
+    def test_double_submit_second_call_is_400_and_does_not_log_in_twice(self):
+        otp = self.send("9300000006").json()["otp"]
+        self.assertEqual(self.verify(otp, "9300000006").status_code, 200)
+        r = self.verify(otp, "9300000006")
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn("tokens", r.json())
+
+    def test_resend_invalidates_the_previous_code(self):
+        first = self.send("9300000007").json()["otp"]
+        second = self.send("9300000007").json()["otp"]
+        if first != second:
+            self.assertEqual(self.verify(first, "9300000007").status_code, 400)
+        self.assertEqual(self.verify(second, "9300000007").status_code, 200)
+
+    def test_expired_code_message(self):
+        otp = self.send("9300000008").json()["otp"]
+        OTPVerification.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
+        r = self.verify(otp, "9300000008")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("expired", r.json()["error"].lower())
+
+    def test_number_formats_reach_the_same_otp(self):
+        # The login page sends 10 digits; a +91 form must verify against the same code.
+        otp = self.send("9300000009").json()["otp"]
+        self.assertEqual(self.verify(otp, "+919300000009").status_code, 200)

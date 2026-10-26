@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Phone, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/context/auth-context';
+import { describeError } from '@/lib/api';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { sendOtp, login } = useAuth();
   const router = useRouter();
+  const verifying = useRef(false); // blocks double submits (a 2nd verify of a used OTP would return HTTP 400)
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function LoginPage() {
       setStep('otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
-      console.error('[v0] OTP send error:', err);
+      console.error('OTP send failed:', describeError(err));
     } finally {
       setLoading(false);
     }
@@ -40,20 +42,26 @@ export default function LoginPage() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (verifying.current) return;
     setError('');
+
+    if (!otp || otp.length !== 6) {
+      setError('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    verifying.current = true;
     setLoading(true);
-
     try {
-      if (!otp || otp.length !== 6) {
-        throw new Error('Please enter a valid 6-digit OTP');
-      }
-
-      await login(phone, otp);
-      router.push('/dashboard');
+      // Navigate only after the server accepted the OTP, and only where the account state says.
+      const result = await login(phone, otp);
+      router.replace(result.nextRoute);
     } catch (err) {
+      // Stay here: the user is not authenticated and keeps what they typed.
       setError(err instanceof Error ? err.message : 'Failed to verify OTP. Please try again.');
-      console.error('[v0] OTP verification error:', err);
+      console.error('OTP verification failed:', describeError(err));
     } finally {
+      verifying.current = false;
       setLoading(false);
     }
   };
