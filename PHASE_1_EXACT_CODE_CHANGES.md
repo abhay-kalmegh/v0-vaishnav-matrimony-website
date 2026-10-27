@@ -157,7 +157,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: NEXT_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -262,7 +262,7 @@ const removeStorageValue = async (key: string): Promise<void> => {
 };
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: NEXT_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },

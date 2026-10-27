@@ -1,4 +1,4 @@
-import apiClient from '../api';
+import apiClient, { getStorageValue } from '../api';
 
 export interface SendOtpRequest {
   phone: string;
@@ -22,17 +22,19 @@ export interface AuthResponse {
     last_name?: string;
     is_verified: boolean;
     role: string;
+    profile_completed?: boolean;
+    is_profile_complete?: boolean;
   };
   is_new_user: boolean;
 }
 
+/** Account details saved right after the phone is verified (POST /auth/register/ needs a signed-in session). */
 export interface RegisterRequest {
-  mobile_number: string;
-  email: string;
   first_name: string;
-  last_name: string;
+  last_name?: string;
   gender: string;
-  role: string;
+  role?: string;
+  email?: string;
 }
 
 const authAPI = {
@@ -52,7 +54,7 @@ const authAPI = {
   },
 
   register: async (data: RegisterRequest) => {
-    const response = await apiClient.post<AuthResponse>('/auth/register/', data);
+    const response = await apiClient.post<{ message: string; user: AuthResponse['user'] }>('/auth/register/', data);
     return response.data;
   },
 
@@ -64,13 +66,12 @@ const authAPI = {
   },
 
   logout: async () => {
-    // Backend doesn't have a specific logout endpoint in urls.py yet,
-    // but typically it's just client-side token removal or blacklisting.
-    // If you add blacklisting later, this will be ready.
+    // Server blacklists the refresh token; failure must never block a local logout.
     try {
-      await apiClient.post('/auth/logout/');
+      const refresh = await getStorageValue('refresh_token');
+      await apiClient.post('/auth/logout/', { refresh });
     } catch (e) {
-      // Ignore if endpoint doesn't exist
+      // ignore - the caller clears local tokens regardless
     }
   },
 

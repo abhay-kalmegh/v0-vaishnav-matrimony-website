@@ -9,7 +9,7 @@ import messagingAPI, { Conversation, Message } from '@/lib/api/messaging';
 
 export function MessagingContent() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -126,11 +126,11 @@ export function MessagingContent() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.sender === msg.sender ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.is_mine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-xs rounded-lg px-4 py-2 ${
-                    msg.sender === msg.sender
+                    msg.is_mine
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary text-foreground'
                   }`}

@@ -162,7 +162,7 @@ export function SuggestionsContent() {
             className="w-full mt-3"
             asChild
           >
-            <Link href={`/dashboard/profile/view?id=${current.id}`}>
+            <Link href={`/profile/view?id=${current.id}`}>
               View Full Profile
             </Link>
           </Button>

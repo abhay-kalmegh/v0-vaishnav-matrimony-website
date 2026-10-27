@@ -26,8 +26,8 @@ export function DashboardContent() {
     const fetchMatches = async () => {
       try {
         setLoading(true);
-        const response = await matchesAPI.getSuggestions(3);
-        setMatches(response.results || []);
+        const response = await matchesAPI.getSuggestions(1);
+        setMatches((response.results || []).slice(0, 3)); // top 3 for the dashboard card
       } catch (err) {
         console.error('[v0] Error fetching matches:', err);
         setError('Failed to load match suggestions');
@@ -98,7 +98,7 @@ export function DashboardContent() {
       <div>
         <div className="mb-6 flex items-center justify-between">
           <h3 className="font-serif text-2xl font-bold text-foreground">Suggested Matches</h3>
-          <Link href="/dashboard/suggestions">
+          <Link href="/suggestions">
             <Button variant="outline" className="gap-2">
               View All
               <ArrowRight className="h-4 w-4" />
@@ -125,7 +125,7 @@ export function DashboardContent() {
               return (
                 <Link
                   key={match.id}
-                  href={`/dashboard/profile/${match.profile}`}
+                  href={`/profile/view?id=${match.profile}`}
                 >
                   <div className="group rounded-lg border border-border bg-card overflow-hidden hover:shadow-lg transition cursor-pointer">
                     <div className="relative h-48 bg-muted">

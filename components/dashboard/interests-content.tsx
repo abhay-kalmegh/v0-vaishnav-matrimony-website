@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, X, CheckCircle, Tabs as TabIcon, Loader2 } from 'lucide-react';
+import { Heart, X, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import interestsAPI, { Interest } from '@/lib/api/interests';
 
@@ -12,7 +12,7 @@ export function InterestsContent() {
   const [activeTab, setActiveTab] = useState<TabType>('received');
   const [interests, setInterests] = useState<Interest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [respondingTo, setRespondingTo] = useState<number | null>(null);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInterests();
@@ -38,7 +38,7 @@ export function InterestsContent() {
     }
   };
 
-  const handleRespond = async (interestId: number, status: 'accepted' | 'rejected') => {
+  const handleRespond = async (interestId: string, status: 'accepted' | 'rejected') => {
     try {
       setRespondingTo(interestId);
       await interestsAPI.respondToInterest(interestId, status);
@@ -144,7 +144,7 @@ export function InterestsContent() {
                   )}
 
                   {(activeTab === 'sent' || activeTab === 'accepted') && (
-                    <Link href={`/dashboard/profile/view?id=${interest.to_profile_data?.id}`}>
+                    <Link href={`/profile/view?id=${interest.to_profile_data?.id}`}>
                       <Button size="sm" variant="outline">
                         View Profile
                       </Button>

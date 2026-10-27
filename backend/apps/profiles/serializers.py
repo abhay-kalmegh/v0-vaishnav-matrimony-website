@@ -1,7 +1,9 @@
 """Serializers for profiles app — full profile CRUD + nested data."""
 
 from rest_framework import serializers
-from apps.accounts.serializers import UserSerializer
+from datetime import date
+
+from apps.accounts.serializers import PublicUserSerializer, UserSerializer
 from apps.spirituality.serializers import SpiritualPracticeSerializer, SpiritualProfileSerializer
 from .models import (
     Career,
@@ -101,6 +103,35 @@ class ProfileSerializer(serializers.ModelSerializer):
     spiritual_profile = SpiritualProfileSerializer(required=False)
     spiritual_practices = SpiritualPracticeSerializer(required=False)
     photos = ProfilePhotoSerializer(many=True, read_only=True)
+    missing_fields = serializers.SerializerMethodField()
+
+    def get_missing_fields(self, obj):
+        from .completion import evaluate
+
+        return evaluate(obj).missing
+
+    def validate_date_of_birth(self, value):
+        if value is None:
+            return value
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if value > today:
+            raise serializers.ValidationError("Date of birth cannot be in the future.")
+        if age < 18:
+            raise serializers.ValidationError("You must be at least 18 years old.")
+        if age > 100:
+            raise serializers.ValidationError("Enter a valid date of birth.")
+        return value
+
+    def validate_height_cm(self, value):
+        if value is not None and not 100 <= value <= 250:
+            raise serializers.ValidationError("Height must be between 100 and 250 cm.")
+        return value
+
+    def validate_weight_kg(self, value):
+        if value is not None and not 25 <= value <= 250:
+            raise serializers.ValidationError("Weight must be between 25 and 250 kg.")
+        return value
 
     class Meta:
         model = Profile
@@ -120,6 +151,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "country",
             "state",
             "profile_completion",
+            "missing_fields",
             "is_approved",
             "education",
             "career",
@@ -158,13 +190,46 @@ class ProfileSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        from .completion import refresh
+
+        refresh(instance)
         return instance
+
+
+class PublicFamilySerializer(FamilyDetailsSerializer):
+    """Family info shown to other members: parents' names stay private."""
+
+    class Meta(FamilyDetailsSerializer.Meta):
+        fields = [f for f in FamilyDetailsSerializer.Meta.fields if f not in ("father_name", "mother_name")]
+
+
+class PublicProfileSerializer(ProfileSerializer):
+    """Another member's profile: no contact details, address, parents' names or private photos."""
+
+    user = PublicUserSerializer(read_only=True)
+    family = PublicFamilySerializer(read_only=True)
+    photos = serializers.SerializerMethodField()
+
+    class Meta(ProfileSerializer.Meta):
+        fields = [
+            f for f in ProfileSerializer.Meta.fields
+            if f not in ("permanent_address", "missing_fields", "is_approved")
+        ]
+        read_only_fields = fields
+
+    def get_photos(self, obj):
+        visible = ["public"]
+        if self.context.get("is_connected"):
+            visible.append("matches_only")
+        qs = [p for p in obj.photos.all() if p.visibility in visible]
+        return ProfilePhotoSerializer(qs, many=True, context=self.context).data
 
 
 class ProfileListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for search results / listing."""
 
-    user = UserSerializer(read_only=True)
+    user = PublicUserSerializer(read_only=True)  # never expose phone/email in lists
     age = serializers.ReadOnlyField()
     primary_photo = serializers.SerializerMethodField()
 
@@ -183,7 +248,9 @@ class ProfileListSerializer(serializers.ModelSerializer):
         ]
 
     def get_primary_photo(self, obj):
-        photo = obj.photos.filter(is_primary=True).first()
+        photo = next(
+            (p for p in obj.photos.all() if p.is_primary and p.visibility == "public"), None
+        )
         if photo:
             return ProfilePhotoSerializer(photo).data
         return None

@@ -1,4 +1,5 @@
-import apiClient from '../api';
+import apiClient, { unwrapList } from '../api';
+import { adaptProfile } from './profiles';
 
 export interface Interest {
   id: string;
@@ -8,6 +9,11 @@ export interface Interest {
   message: string;
   created_at: string;
   responded_at?: string;
+  // UI aliases
+  from_profile_data?: any;
+  /** The *other* person: the receiver for sent interests, the sender for received ones. */
+  to_profile_data?: any;
+  [key: string]: any;
 }
 
 export interface Shortlist {
@@ -16,11 +22,18 @@ export interface Shortlist {
   created_at: string;
 }
 
+const adaptInterest = (i: any, direction: 'sent' | 'received'): Interest => ({
+  ...i,
+  created_at: i.sent_at,
+  from_profile_data: adaptProfile(i.sender_profile),
+  to_profile_data: adaptProfile(direction === 'sent' ? i.receiver_profile : i.sender_profile),
+});
+
 const interestsAPI = {
-  sendInterest: async (receiverProfileId: string, message: string = "") => {
+  sendInterest: async (receiverProfileId: string, message: string = '') => {
     const response = await apiClient.post('/interests/send/', {
       receiver_id: receiverProfileId,
-      message: message
+      message,
     });
     return response.data;
   },
@@ -28,23 +41,25 @@ const interestsAPI = {
   respondToInterest: async (interestId: string, action: 'accepted' | 'rejected') => {
     const response = await apiClient.post(`/interests/respond/`, {
       interest_id: interestId,
-      action: action
+      action,
     });
     return response.data;
   },
 
-  getReceivedInterests: async () => {
-    const response = await apiClient.get<Interest[]>('/interests/received/');
-    return response.data;
+  getReceivedInterests: async (status?: Interest['status']) => {
+    const response = await apiClient.get('/interests/received/');
+    const list = unwrapList(response.data).map((i) => adaptInterest(i, 'received'));
+    return status ? list.filter((i) => i.status === status) : list;
   },
 
   getSentInterests: async () => {
-    const response = await apiClient.get<Interest[]>('/interests/sent/');
-    return response.data;
+    const response = await apiClient.get('/interests/sent/');
+    return unwrapList(response.data).map((i) => adaptInterest(i, 'sent'));
   },
 
   addToShortlist: async (profileId: string) => {
-    const response = await apiClient.post('/interests/shortlist/', { shortlisted_profile_id: profileId });
+    // serializer field is `shortlisted_profile` (a profile id)
+    const response = await apiClient.post('/interests/shortlist/', { shortlisted_profile: profileId });
     return response.data;
   },
 
@@ -53,8 +68,12 @@ const interestsAPI = {
   },
 
   getShortlist: async () => {
-    const response = await apiClient.get<Shortlist[]>('/interests/shortlist/');
-    return response.data;
+    const response = await apiClient.get('/interests/shortlist/');
+    return unwrapList(response.data).map((s) => ({
+      ...s,
+      shortlisted_profile: adaptProfile(s.shortlisted),
+      shortlisted_profile_id: s.shortlisted_profile,
+    }));
   },
 };
 

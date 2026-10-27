@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import authAPI, { AuthResponse } from '../api/auth';
+import { describeError, getErrorMessage } from '../api';
 import { Preferences } from '@capacitor/preferences';
 import { toast } from 'sonner';
 
@@ -41,11 +42,37 @@ const removeStorageValue = async (key: string): Promise<void> => {
   }
 };
 
+export type PostLoginRoute = '/dashboard' | '/register';
+
+export interface LoginResult {
+  user: AuthResponse['user'];
+  isNewUser: boolean;
+  /** Where to send the user, decided from the server's account state (never assumed). */
+  nextRoute: PostLoginRoute;
+}
+
+/** Complete accounts go to the app; everyone else resumes onboarding at the first unfinished step. */
+export function routeAfterLogin(user: { profile_completed?: boolean; is_profile_complete?: boolean }): PostLoginRoute {
+  return user.profile_completed === true || user.is_profile_complete === true ? '/dashboard' : '/register';
+}
+
+/** Reject anything that is not a well-formed login response, so a bad reply can never "log in". */
+export function parseAuthResponse(data: any): AuthResponse {
+  const t = data?.tokens;
+  const ok =
+    t && typeof t === 'object' &&
+    typeof t.access === 'string' && t.access.length > 0 &&
+    typeof t.refresh === 'string' && t.refresh.length > 0 &&
+    data.user && typeof data.user === 'object' && !Array.isArray(data.user);
+  if (!ok) throw new Error('Unexpected response from the server. Please try again.');
+  return data as AuthResponse;
+}
+
 interface AuthContextType {
   user: AuthResponse['user'] | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (phone: string, otp: string) => Promise<void>;
+  login: (phone: string, otp: string) => Promise<LoginResult>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   sendOtp: (phone: string) => Promise<void>;
@@ -77,26 +104,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authAPI.sendOtp({ phone });
       toast.success('OTP sent to your phone. Check your messages.');
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send OTP. Please try again.';
-      console.error('Send OTP error:', error);
+      const errorMsg = getErrorMessage(error, 'Failed to send OTP. Please try again.');
+      console.error('Send OTP error:', describeError(error));
       toast.error(errorMsg);
       throw error;
     }
   };
 
-  const login = async (phone: string, otp: string) => {
+  const login = async (phone: string, otp: string): Promise<LoginResult> => {
     try {
       setIsLoading(true);
-      const response = await authAPI.verifyOtp({ phone, otp });
+      const response = parseAuthResponse(await authAPI.verifyOtp({ phone, otp }));
       await setStorageValue('access_token', response.tokens.access);
       await setStorageValue('refresh_token', response.tokens.refresh);
       setUser(response.user as any);
       toast.success('Login successful! Welcome to Vaishnav Vivaah.');
+      return { user: response.user, isNewUser: response.is_new_user === true, nextRoute: routeAfterLogin(response.user) };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to verify OTP. Please try again.';
-      console.error('Login error:', error);
+      const errorMsg = getErrorMessage(error, 'Failed to verify OTP. Please try again.');
+      console.error('Login error:', describeError(error));
       toast.error(errorMsg);
-      throw error;
+      // A readable Error (not the raw axios error) so every caller can show it as-is.
+      throw new Error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -105,14 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: any) => {
     try {
       setIsLoading(true);
+      // Requires the OTP-verified session; saves account details only (no tokens issued here).
       const response = await authAPI.register(data);
-      await setStorageValue('access_token', response.tokens.access);
-      await setStorageValue('refresh_token', response.tokens.refresh);
       setUser(response.user as any);
-      toast.success('Registration successful! Welcome to Vaishnav Vivaah.');
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Registration failed. Please check your details and try again.';
-      console.error('Register error:', error);
+      const errorMsg = getErrorMessage(error, 'Registration failed. Please check your details and try again.');
+      console.error('Register error:', describeError(error));
       toast.error(errorMsg);
       throw error;
     } finally {
@@ -125,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authAPI.logout();
       toast.success('Logged out successfully.');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout error:', describeError(error));
     } finally {
       await removeStorageValue('access_token');
       await removeStorageValue('refresh_token');
@@ -138,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authAPI.getCurrentUser();
       setUser(response);
     } catch (error) {
-      console.error('Refresh user error:', error);
+      console.error('Refresh user error:', describeError(error));
       await removeStorageValue('access_token');
       await removeStorageValue('refresh_token');
       setUser(null);
