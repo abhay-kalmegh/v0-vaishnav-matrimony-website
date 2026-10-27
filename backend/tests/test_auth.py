@@ -343,3 +343,47 @@ class VerifyContractTests(AuthBase):
         # The login page sends 10 digits; a +91 form must verify against the same code.
         otp = self.send("9300000009").json()["otp"]
         self.assertEqual(self.verify(otp, "+919300000009").status_code, 200)
+
+
+class SeedDemoProfileCommandTests(TestCase):
+    def run_cmd(self, mobile):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("seed_demo_profile", mobile, stdout=out)
+        return out.getvalue()
+
+    def test_refuses_outside_debug(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        make_user(mobile="9400000001")
+        with self.assertRaises(CommandError):
+            call_command("seed_demo_profile", "9400000001")  # test runner => DEBUG=False
+
+    @override_settings(DEBUG=True)
+    def test_completes_a_real_account_using_the_real_rules(self):
+        user = make_user(mobile="9400000002")
+        client = client_for(user)
+        self.assertFalse(client.get("/api/auth/me/").json()["profile_completed"])
+        self.assertIn("COMPLETE", self.run_cmd("9400000002"))
+        me = client.get("/api/auth/me/").json()
+        self.assertTrue(me["profile_completed"])
+        self.assertEqual(me["missing_profile_fields"], [])
+
+    @override_settings(DEBUG=True)
+    def test_unknown_number_is_an_error_and_existing_data_is_kept(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        with self.assertRaises(CommandError):
+            call_command("seed_demo_profile", "9400000999")
+        user = make_user(mobile="9400000003")
+        from apps.profiles.models import Profile
+
+        Profile.objects.filter(user=user).update(current_city="Pune", height_cm=181)
+        self.run_cmd("9400000003")
+        p = Profile.objects.get(user=user)
+        self.assertEqual((p.current_city, p.height_cm), ("Pune", 181))

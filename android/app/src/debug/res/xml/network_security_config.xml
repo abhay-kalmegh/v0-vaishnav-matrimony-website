@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DEBUG builds only (this file replaces the main one when building the debug variant).
+     Allows plain HTTP so the app can reach a Django dev server:
+       - emulator:        http://10.0.2.2:8000/api
+       - physical device: http://<your-computer-LAN-IP>:8000/api
+     It is never packaged into a release build. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

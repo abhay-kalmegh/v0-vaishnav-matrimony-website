@@ -6,21 +6,12 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
-
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
-
-ENV_FILE = os.path.join(BASE_DIR, ".env")
-
-# Normal development loads .env.
-# Isolated production tests can skip it.
-if os.environ.get("ENV_FILE_FOR_TEST") != "1":
-    environ.Env.read_env(ENV_FILE)
-
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 _INSECURE_DEV_KEY = "insecure-development-key-do-not-use-in-production"
 DEBUG = env("DEBUG", default=False)  # Never True in production
@@ -127,14 +118,6 @@ if not DEBUG:
 # Database
 # ──────────────────────────────────────────────
 
-# DATABASES = {
-#     "default": env.db(
-#         "DATABASE_URL",
-#         default="postgresql://postgres:postgres@localhost:5432/vaishnav_vivaah",
-#     )
-# }
-# import os
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -228,20 +211,6 @@ SIMPLE_JWT = {
 # ──────────────────────────────────────────────
 # CORS
 # ──────────────────────────────────────────────
-ALLOWED_HOSTS = env.list(
-    "ALLOWED_HOSTS",
-    default=["127.0.0.1", "localhost"] if DEBUG else [],
-)
-
-CSRF_TRUSTED_ORIGINS = env.list(
-    "CSRF_TRUSTED_ORIGINS",
-    default=[
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ] if DEBUG else [],
-)
 
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
@@ -252,8 +221,6 @@ CORS_ALLOWED_ORIGINS = env.list(
         "https://localhost",
         "http://192.168.1.7:3000",
         "http://192.168.1.7",
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
     ],
 )
 # Auth uses Bearer tokens, not cookies, so credentialed CORS is not needed.
@@ -288,13 +255,6 @@ OTP_LENGTH = 6
 OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)  # wrong guesses before the code is burned
 OTP_RESEND_COOLDOWN_SECONDS = env.int("OTP_RESEND_COOLDOWN_SECONDS", default=60)
 OTP_MAX_SENDS_PER_HOUR = env.int("OTP_MAX_SENDS_PER_HOUR", default=5)  # per mobile number
-
-OTP_DEV_MODE = env.bool("OTP_DEV_MODE", default=False)
-
-if OTP_DEV_MODE and not DEBUG:
-    raise ImproperlyConfigured(
-        "OTP_DEV_MODE must not be enabled in production."
-    )
 
 # Uploads
 MAX_PHOTO_BYTES = env.int("MAX_PHOTO_BYTES", default=5 * 1024 * 1024)

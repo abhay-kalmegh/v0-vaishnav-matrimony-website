@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:android": "node scripts/build-android.mjs dev",
-    "build:android:release": "node scripts/build-android.mjs release"
+    "build:android:release": "node scripts/build-android.mjs release",
+    "verify:install": "node scripts/verify-install.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
@@ -68,7 +69,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.4.3",
+    "@capacitor/cli": "^8.5.3",
     "@eslint/eslintrc": "^3.3.7",
     "@tailwindcss/postcss": "^4.2.0",
     "@testing-library/dom": "^10.4.2",

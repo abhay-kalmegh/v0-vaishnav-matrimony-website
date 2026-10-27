@@ -25,21 +25,27 @@ import {
 } from '@/components/ui/select';
 import profilesAPI, { Profile } from '@/lib/api/profiles';
 import interestsAPI from '@/lib/api/interests';
+import apiClient, { unwrapList } from '@/lib/api';
 
 export function SearchContent() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [sendingInterest, setSendingInterest] = useState<number | null>(null);
+  const [sendingInterest, setSendingInterest] = useState<string | null>(null);
 
   // Filters
   const [ageMin, setAgeMin] = useState('20');
   const [ageMax, setAgeMax] = useState('35');
-  const [sampradayFilter, setSampradayFilter] = useState('');
+  const [sampradayFilter, setSampradayFilter] = useState('all');
+  const [sampradays, setSampradays] = useState<{ id: string; name: string }[]>([]);
   const [cityFilter, setCityFilter] = useState('');
 
   useEffect(() => {
     fetchProfiles();
+    apiClient
+      .get('/spirituality/sampraday/')
+      .then((r) => setSampradays(unwrapList(r.data)))
+      .catch(() => setSampradays([]));
   }, []);
 
   const fetchProfiles = async () => {
@@ -52,7 +58,7 @@ export function SearchContent() {
         offset: 0,
       };
 
-      if (sampradayFilter) filters.sampraday = parseInt(sampradayFilter);
+      if (sampradayFilter && sampradayFilter !== 'all') filters.sampraday = sampradayFilter;
       if (cityFilter) filters.city = cityFilter;
 
       const response = await profilesAPI.searchProfiles(filters);
@@ -64,7 +70,7 @@ export function SearchContent() {
     }
   };
 
-  const handleSendInterest = async (userId: number) => {
+  const handleSendInterest = async (userId: string) => {
     try {
       setSendingInterest(userId);
       await interestsAPI.sendInterest(userId);
@@ -140,10 +146,10 @@ export function SearchContent() {
                   <SelectValue placeholder="All Sampradays" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sampradays</SelectItem>
-                  <SelectItem value="1">ISKCON</SelectItem>
-                  <SelectItem value="2">Pushtimarg</SelectItem>
-                  <SelectItem value="3">Gaudiya Vaishnav</SelectItem>
+                  <SelectItem value="all">All Sampradays</SelectItem>
+                  {sampradays.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -217,7 +223,7 @@ export function SearchContent() {
               </div>
 
               <div className="p-4">
-                <Link href={`/dashboard/profile/view?id=${profile.id}`}>
+                <Link href={`/profile/view?id=${profile.id}`}>
                   <h3 className="font-serif text-lg font-bold text-foreground hover:text-primary transition">
                     {profile.user?.first_name} {profile.user?.last_name}
                   </h3>
@@ -238,10 +244,10 @@ export function SearchContent() {
                   <Button
                     size="sm"
                     className="flex-1 bg-primary hover:bg-primary/90"
-                    onClick={() => handleSendInterest(profile.user)}
-                    disabled={sendingInterest === profile.user}
+                    onClick={() => handleSendInterest(profile.id)}
+                    disabled={sendingInterest === profile.id}
                   >
-                    {sendingInterest === profile.user ? (
+                    {sendingInterest === profile.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>

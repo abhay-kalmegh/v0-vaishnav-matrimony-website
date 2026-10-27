@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- RELEASE policy: all traffic must use HTTPS. Development hosts are allowed only by the
+     debug-only override in src/debug/res/xml/network_security_config.xml. -->
 <network-security-config>
-    <!-- Allow cleartext (HTTP) traffic to development IPs only -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Your development backend IP -->
-        <domain includeSubdomains="true">192.168.1.7</domain>
-        <!-- Android emulator default IP to reach host -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <!-- Localhost fallback -->
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">127.0.0.1</domain>
-    </domain-config>
-    
-    <!-- Production: enforce HTTPS -->
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">api.vaishnav-vivaah.com</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>

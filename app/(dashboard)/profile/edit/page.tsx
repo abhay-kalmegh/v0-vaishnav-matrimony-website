@@ -3,7 +3,7 @@ import { ProfileEditContent } from '@/components/dashboard/profile-edit-content'
 
 export default function ProfileEditPage() {
   return (
-    <ProtectedRoute requireProfileComplete>
+    <ProtectedRoute>
       <ProfileEditContent />
     </ProtectedRoute>
   )

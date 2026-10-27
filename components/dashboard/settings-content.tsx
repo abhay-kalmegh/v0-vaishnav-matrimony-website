@@ -31,7 +31,7 @@ export function SettingsContent() {
     allowMessages: true,
   })
 
-  const handleToggle = (key: string) => {
+  const handleToggle = (key: keyof typeof settings) => {
     setSettings((prev) => ({
       ...prev,
       [key]: !prev[key],

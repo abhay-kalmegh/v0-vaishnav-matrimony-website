@@ -1,4 +1,3 @@
-import os
 import subprocess
 import sys
 from datetime import timedelta
@@ -95,46 +94,15 @@ class PlatformTests(TestCase):
     def test_api_docs_not_exposed_outside_debug(self):
         # Test runs with DEBUG=False at URL-conf load time for the docs routes.
         self.assertIn(APIClient().get("/api/schema/").status_code, (404,))
-        
+
     def _boot(self, **env):
         import os
 
-        full = {
-            k: v
-            for k, v in os.environ.items()
-            if k not in (
-                "SECRET_KEY",
-                "DEBUG",
-                "ALLOWED_HOSTS",
-                "OTP_DEV_MODE",
-            )
-        }
+        full = {k: v for k, v in os.environ.items() if k not in ("SECRET_KEY", "DEBUG", "ALLOWED_HOSTS")}
+        full.update(env, DATABASE_URL="sqlite:////tmp/boot_check.db", DJANGO_SETTINGS_MODULE="config.settings")
+        code = "import django; django.setup(); from django.conf import settings; print('OK', settings.DEBUG, settings.ALLOWED_HOSTS)"
+        return subprocess.run([sys.executable, "-c", code], cwd=BACKEND, env=full, capture_output=True, text=True)
 
-        full.update(
-            env,
-            DATABASE_URL="sqlite:////tmp/boot_check.db",
-            DJANGO_SETTINGS_MODULE="config.settings",
-        )
-
-        # Prevent config.settings from loading the developer's local .env
-        # in this isolated production-configuration test.
-        full["ENV_FILE_FOR_TEST"] = "1"
-
-        code = (
-            "import django; "
-            "django.setup(); "
-            "from django.conf import settings; "
-            "print('OK', settings.DEBUG, settings.ALLOWED_HOSTS)"
-        )
-
-        return subprocess.run(
-            [sys.executable, "-c", code],
-            cwd=BACKEND,
-            env=full,
-            capture_output=True,
-            text=True,
-        )
-        
     def test_production_refuses_to_boot_without_a_real_secret_key(self):
         r = self._boot(DEBUG="False")
         self.assertNotEqual(r.returncode, 0)
